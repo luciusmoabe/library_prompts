@@ -27,16 +27,20 @@ async function main() {
   `
   await sql`
     CREATE TABLE IF NOT EXISTS prompts (
-      id          SERIAL PRIMARY KEY,
-      title       TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category    TEXT NOT NULL,
-      content     TEXT NOT NULL,
-      owner_id    INTEGER NOT NULL REFERENCES users(id),
-      favorite    BOOLEAN NOT NULL DEFAULT false,
-      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+      id           SERIAL PRIMARY KEY,
+      title        TEXT NOT NULL,
+      description  TEXT NOT NULL,
+      category     TEXT NOT NULL,
+      content      TEXT NOT NULL,
+      purpose      TEXT NOT NULL DEFAULT '',
+      when_to_use  TEXT NOT NULL DEFAULT '',
+      owner_id     INTEGER NOT NULL REFERENCES users(id),
+      favorite     BOOLEAN NOT NULL DEFAULT false,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `
+  await sql`ALTER TABLE prompts ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT ''`
+  await sql`ALTER TABLE prompts ADD COLUMN IF NOT EXISTS when_to_use TEXT NOT NULL DEFAULT ''`
   await sql`
     CREATE TABLE IF NOT EXISTS prompt_attachments (
       id        SERIAL PRIMARY KEY,
@@ -75,52 +79,65 @@ async function main() {
   let promptCount = 0
   let attachmentCount = 0
 
-  if (existingPrompts[0].count === 0) {
-    const [prompt1] = await sql`
-      INSERT INTO prompts (title, description, category, content, owner_id, favorite)
-      VALUES (
-        'Estratégia de conteúdo',
-        'Transforme ideias soltas em um plano editorial claro e acionável.',
-        'Marketing',
+  const seedPrompts = [
+    {
+      title: 'Estratégia de conteúdo',
+      description: 'Transforme ideias soltas em um plano editorial claro e acionável.',
+      category: 'Marketing',
+      content:
         'Atue como estrategista de conteúdo. Crie um plano editorial para {{marca}}, considerando o público {{publico}} e o objetivo {{objetivo}}.',
-        ${userIds['lucas@promptly.dev']},
-        true
-      )
-      RETURNING id
-    `
-    const [prompt2] = await sql`
-      INSERT INTO prompts (title, description, category, content, owner_id, favorite)
-      VALUES (
-        'Refatoração de código',
-        'Revise código legado com foco em legibilidade, testes e manutenção.',
-        'Desenvolvimento',
-        E'Analise o código abaixo como um engenheiro sênior. Aponte riscos e escreva os testes essenciais.\n\n{{codigo}}',
-        ${userIds['marina@promptly.dev']},
-        true
-      )
-      RETURNING id
-    `
-    const [prompt3] = await sql`
-      INSERT INTO prompts (title, description, category, content, owner_id, favorite)
-      VALUES (
-        'Síntese de reunião',
-        'Converta transcrições longas em decisões e próximos passos.',
-        'Produtividade',
-        E'Resuma a reunião abaixo em decisões, responsáveis, prazos e perguntas em aberto.\n\n{{transcricao}}',
-        ${userIds['lucas@promptly.dev']},
-        false
-      )
-      RETURNING id
-    `
-    promptCount = 3
+      purpose: 'Estrutura um plano editorial completo a partir de poucas informações sobre a marca, o público e o objetivo da campanha.',
+      whenToUse: 'Quando você precisa organizar a produção de conteúdo do mês, mas ainda não tem um plano formal — só ideias soltas.',
+      ownerEmail: 'lucas@promptly.dev',
+      favorite: true,
+    },
+    {
+      title: 'Refatoração de código',
+      description: 'Revise código legado com foco em legibilidade, testes e manutenção.',
+      category: 'Desenvolvimento',
+      content: 'Analise o código abaixo como um engenheiro sênior. Aponte riscos e escreva os testes essenciais.\n\n{{codigo}}',
+      purpose: 'Revisa um trecho de código legado, apontando riscos técnicos e sugerindo os testes automatizados mais importantes.',
+      whenToUse: 'Antes de mexer em um código antigo sem testes, ou quando quer uma segunda opinião técnica antes de um PR.',
+      ownerEmail: 'marina@promptly.dev',
+      favorite: true,
+    },
+    {
+      title: 'Síntese de reunião',
+      description: 'Converta transcrições longas em decisões e próximos passos.',
+      category: 'Produtividade',
+      content: 'Resuma a reunião abaixo em decisões, responsáveis, prazos e perguntas em aberto.\n\n{{transcricao}}',
+      purpose: 'Transforma a transcrição bruta de uma reunião em um resumo objetivo: decisões, responsáveis, prazos e pendências.',
+      whenToUse: 'Logo depois de uma reunião longa, quando ninguém tem tempo de reler a transcrição inteira para extrair os próximos passos.',
+      ownerEmail: 'lucas@promptly.dev',
+      favorite: false,
+    },
+  ] as const
+
+  if (existingPrompts[0].count === 0) {
+    const insertedIds: number[] = []
+    for (const p of seedPrompts) {
+      const [row] = await sql`
+        INSERT INTO prompts (title, description, category, content, purpose, when_to_use, owner_id, favorite)
+        VALUES (${p.title}, ${p.description}, ${p.category}, ${p.content}, ${p.purpose}, ${p.whenToUse}, ${userIds[p.ownerEmail]}, ${p.favorite})
+        RETURNING id
+      `
+      insertedIds.push(row.id)
+    }
+    promptCount = seedPrompts.length
 
     await sql`
       INSERT INTO prompt_attachments (prompt_id, name, size)
-      VALUES (${prompt2.id}, 'checklist-refatoracao.pdf', '248 KB')
+      VALUES (${insertedIds[1]}, 'checklist-refatoracao.pdf', '248 KB')
     `
     attachmentCount = 1
-    void prompt1
-    void prompt3
+  }
+
+  // Backfill purpose/when_to_use on rows created before these columns existed.
+  for (const p of seedPrompts) {
+    await sql`
+      UPDATE prompts SET purpose = ${p.purpose}, when_to_use = ${p.whenToUse}
+      WHERE title = ${p.title} AND purpose = ''
+    `
   }
 
   console.log(`Seed concluído: ${seedUsers.length} usuários, ${seedCategories.length} categorias, ${promptCount} prompts, ${attachmentCount} anexos.`)

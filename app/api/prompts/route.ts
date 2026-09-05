@@ -9,8 +9,8 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const rows = await sql`
-    SELECT p.id, p.title, p.description, p.category, p.content, p.favorite,
-           p.owner_id AS "ownerId", u.name AS owner
+    SELECT p.id, p.title, p.description, p.category, p.content, p.purpose,
+           p.when_to_use AS "whenToUse", p.favorite, p.owner_id AS "ownerId", u.name AS owner
     FROM prompts p
     JOIN users u ON u.id = p.owner_id
     ORDER BY p.created_at DESC
@@ -31,6 +31,8 @@ export async function GET() {
     description: row.description,
     category: row.category,
     content: row.content,
+    purpose: row.purpose,
+    whenToUse: row.whenToUse,
     owner: row.owner,
     ownerId: row.ownerId,
     favorite: row.favorite,
@@ -48,23 +50,32 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { title, description, category, content, attachments } = body as {
+  const { title, description, category, content, purpose, whenToUse, attachments } = body as {
     title?: string
     description?: string
     category?: string
     content?: string
+    purpose?: string
+    whenToUse?: string
     attachments?: Attachment[]
   }
 
-  if (!title?.trim() || !description?.trim() || !category?.trim() || !content?.trim()) {
+  if (
+    !title?.trim() ||
+    !description?.trim() ||
+    !category?.trim() ||
+    !content?.trim() ||
+    !purpose?.trim() ||
+    !whenToUse?.trim()
+  ) {
     return NextResponse.json({ error: 'Campos obrigatórios ausentes' }, { status: 400 })
   }
 
   const ownerId = Number(session.user.id)
   const [prompt] = await sql`
-    INSERT INTO prompts (title, description, category, content, owner_id, favorite)
-    VALUES (${title}, ${description}, ${category}, ${content}, ${ownerId}, false)
-    RETURNING id, title, description, category, content, favorite, owner_id AS "ownerId"
+    INSERT INTO prompts (title, description, category, content, purpose, when_to_use, owner_id, favorite)
+    VALUES (${title}, ${description}, ${category}, ${content}, ${purpose}, ${whenToUse}, ${ownerId}, false)
+    RETURNING id, title, description, category, content, purpose, when_to_use AS "whenToUse", favorite, owner_id AS "ownerId"
   `
 
   const savedAttachments: Attachment[] = []
@@ -82,6 +93,8 @@ export async function POST(request: Request) {
     description: prompt.description,
     category: prompt.category,
     content: prompt.content,
+    purpose: prompt.purpose,
+    whenToUse: prompt.whenToUse,
     owner: session.user.name,
     ownerId: prompt.ownerId,
     favorite: prompt.favorite,

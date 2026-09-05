@@ -21,14 +21,21 @@ export function getPrompts(): Promise<Prompt[]> {
   return fetch('/api/prompts').then((res) => handle(res))
 }
 
-export function createPrompt(input: {
+type PromptInput = {
   title: string
   description: string
   category: string
   content: string
-  attachments: Attachment[]
-}): Promise<Prompt> {
+  purpose: string
+  whenToUse: string
+}
+
+export function createPrompt(input: PromptInput & { attachments: Attachment[] }): Promise<Prompt> {
   return postJson('/api/prompts', input).then((res) => handle(res))
+}
+
+export function updatePrompt(id: number, input: PromptInput): Promise<Prompt> {
+  return postJson(`/api/prompts/${id}`, input, 'PATCH').then((res) => handle(res))
 }
 
 export function toggleFavorite(id: number, favorite: boolean): Promise<Prompt> {

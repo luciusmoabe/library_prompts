@@ -11,6 +11,8 @@ export type Prompt = {
   description: string
   category: string
   content: string
+  purpose: string
+  whenToUse: string
   owner: string
   ownerId: number
   favorite: boolean

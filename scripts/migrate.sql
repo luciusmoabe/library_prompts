@@ -14,15 +14,20 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 CREATE TABLE IF NOT EXISTS prompts (
-  id          SERIAL PRIMARY KEY,
-  title       TEXT NOT NULL,
-  description TEXT NOT NULL,
-  category    TEXT NOT NULL,
-  content     TEXT NOT NULL,
-  owner_id    INTEGER NOT NULL REFERENCES users(id),
-  favorite    BOOLEAN NOT NULL DEFAULT false,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id           SERIAL PRIMARY KEY,
+  title        TEXT NOT NULL,
+  description  TEXT NOT NULL,
+  category     TEXT NOT NULL,
+  content      TEXT NOT NULL,
+  purpose      TEXT NOT NULL DEFAULT '',
+  when_to_use  TEXT NOT NULL DEFAULT '',
+  owner_id     INTEGER NOT NULL REFERENCES users(id),
+  favorite     BOOLEAN NOT NULL DEFAULT false,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE prompts ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT '';
+ALTER TABLE prompts ADD COLUMN IF NOT EXISTS when_to_use TEXT NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS prompt_attachments (
   id        SERIAL PRIMARY KEY,

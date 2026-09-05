@@ -2,7 +2,6 @@
 
 import type { Prompt } from '@/lib/types'
 import PromptCard from '@/components/PromptCard'
-import DetailPanel from '@/components/DetailPanel'
 
 export default function PromptLibrary({
   canEdit,
@@ -10,20 +9,18 @@ export default function PromptLibrary({
   onQueryChange,
   onOpenNewPrompt,
   filtered,
-  selected,
+  selectedId,
   onSelect,
   onToggleFavorite,
-  canEditSelected,
 }: {
   canEdit: boolean
   query: string
   onQueryChange: (value: string) => void
   onOpenNewPrompt: () => void
   filtered: Prompt[]
-  selected: Prompt | undefined
+  selectedId: number | null
   onSelect: (id: number) => void
   onToggleFavorite: (prompt: Prompt) => void
-  canEditSelected: boolean
 }) {
   return (
     <section className="content-wrap">
@@ -48,7 +45,7 @@ export default function PromptLibrary({
             <PromptCard
               key={prompt.id}
               prompt={prompt}
-              selected={selected?.id === prompt.id}
+              selected={selectedId === prompt.id}
               onSelect={() => onSelect(prompt.id)}
               onToggleFavorite={() => onToggleFavorite(prompt)}
             />
@@ -61,7 +58,6 @@ export default function PromptLibrary({
             </div>
           )}
         </div>
-        {selected && <DetailPanel prompt={selected} canEditThis={canEditSelected} />}
       </div>
     </section>
   )
