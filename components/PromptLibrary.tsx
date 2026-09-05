@@ -9,8 +9,6 @@ export default function PromptLibrary({
   onQueryChange,
   onOpenNewPrompt,
   filtered,
-  selectedId,
-  onSelect,
   onToggleFavorite,
 }: {
   canEdit: boolean
@@ -18,8 +16,6 @@ export default function PromptLibrary({
   onQueryChange: (value: string) => void
   onOpenNewPrompt: () => void
   filtered: Prompt[]
-  selectedId: number | null
-  onSelect: (id: number) => void
   onToggleFavorite: (prompt: Prompt) => void
 }) {
   return (
@@ -42,13 +38,7 @@ export default function PromptLibrary({
       <div className="library-layout">
         <div className="cards">
           {filtered.map((prompt) => (
-            <PromptCard
-              key={prompt.id}
-              prompt={prompt}
-              selected={selectedId === prompt.id}
-              onSelect={() => onSelect(prompt.id)}
-              onToggleFavorite={() => onToggleFavorite(prompt)}
-            />
+            <PromptCard key={prompt.id} prompt={prompt} onToggleFavorite={() => onToggleFavorite(prompt)} />
           ))}
           {filtered.length === 0 && (
             <div className="empty-state">

@@ -4,6 +4,41 @@ import { authOptions } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import type { Attachment, Prompt } from '@/lib/types'
 
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const [row] = await sql`
+    SELECT p.id, p.title, p.description, p.category, p.content, p.purpose,
+           p.when_to_use AS "whenToUse", p.favorite, p.owner_id AS "ownerId", u.name AS owner
+    FROM prompts p
+    JOIN users u ON u.id = p.owner_id
+    WHERE p.id = ${Number(id)}
+  `
+  if (!row) return NextResponse.json({ error: 'Prompt não encontrado' }, { status: 404 })
+
+  const attachmentRows = await sql`
+    SELECT name, size FROM prompt_attachments WHERE prompt_id = ${row.id}
+  `
+
+  const result: Prompt = {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    content: row.content,
+    purpose: row.purpose,
+    whenToUse: row.whenToUse,
+    owner: row.owner,
+    ownerId: row.ownerId,
+    favorite: row.favorite,
+    attachments: attachmentRows as Attachment[],
+  }
+
+  return NextResponse.json(result)
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

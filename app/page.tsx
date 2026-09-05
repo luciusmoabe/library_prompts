@@ -13,11 +13,10 @@ import NewCategoryForm from '@/components/NewCategoryForm'
 import NewUserForm from '@/components/NewUserForm'
 import EditUserForm from '@/components/EditUserForm'
 import ChangePasswordForm from '@/components/ChangePasswordForm'
-import PromptDetailModal from '@/components/PromptDetailModal'
 import { deleteCategory, deleteUser, getCategories, getPrompts, getUsers, toggleFavorite as apiToggleFavorite } from '@/lib/api'
 import type { Category, Prompt, User } from '@/lib/types'
 
-type ModalKind = 'prompt' | 'category' | 'user' | 'editUser' | 'password' | 'promptDetail' | null
+type ModalKind = 'prompt' | 'category' | 'user' | 'editUser' | 'password' | null
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -32,7 +31,6 @@ export default function Home() {
   const [section, setSection] = useState<'library' | 'categories' | 'users'>('library')
   const [category, setCategory] = useState('Todos os prompts')
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<number | null>(null)
   const [modal, setModal] = useState<ModalKind>(null)
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
@@ -74,7 +72,6 @@ export default function Home() {
       }),
     [prompts, category, query],
   )
-  const selected = prompts.find((prompt) => prompt.id === selectedId)
 
   async function handleToggleFavorite(prompt: Prompt) {
     const nextFavorite = !prompt.favorite
@@ -154,11 +151,6 @@ export default function Home() {
               onQueryChange={setQuery}
               onOpenNewPrompt={() => setModal('prompt')}
               filtered={filtered}
-              selectedId={selectedId}
-              onSelect={(id) => {
-                setSelectedId(id)
-                setModal('promptDetail')
-              }}
               onToggleFavorite={handleToggleFavorite}
             />
           )}
@@ -171,7 +163,6 @@ export default function Home() {
             categories={categories}
             onSaved={(prompt) => {
               setPrompts((current) => [prompt, ...current])
-              setSelectedId(prompt.id)
               setModal(null)
             }}
           />
@@ -214,18 +205,6 @@ export default function Home() {
             }}
           />
         </Modal>
-      )}
-      {modal === 'promptDetail' && selected && (
-        <PromptDetailModal
-          prompt={selected}
-          categories={categories}
-          canShowEdit={isAdmin || (session.user.role === 'Editor' && selected.ownerId === Number(session.user.id))}
-          canActuallyEdit={isAdmin}
-          onClose={() => setModal(null)}
-          onSaved={(updated) => {
-            setPrompts((current) => current.map((p) => (p.id === updated.id ? updated : p)))
-          }}
-        />
       )}
       {modal === 'password' && (
         <Modal title="Trocar senha" close={() => setModal(null)}>

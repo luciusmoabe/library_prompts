@@ -1,26 +1,24 @@
 'use client'
 
 import type { MouseEvent } from 'react'
+import Link from 'next/link'
 import type { Prompt } from '@/lib/types'
 
 export default function PromptCard({
   prompt,
-  selected,
-  onSelect,
   onToggleFavorite,
 }: {
   prompt: Prompt
-  selected: boolean
-  onSelect: () => void
   onToggleFavorite: () => void
 }) {
   function handleFavoriteClick(event: MouseEvent) {
+    event.preventDefault()
     event.stopPropagation()
     onToggleFavorite()
   }
 
   return (
-    <article className={selected ? 'prompt-card selected' : 'prompt-card'} onClick={onSelect}>
+    <Link href={`/prompts/${prompt.id}`} className="prompt-card">
       <div className="card-top">
         <span>{prompt.category}</span>
         <button className="favorite" onClick={handleFavoriteClick}>
@@ -30,6 +28,6 @@ export default function PromptCard({
       <h2>{prompt.title}</h2>
       <p>{prompt.description}</p>
       <small>Por {prompt.owner}</small>
-    </article>
+    </Link>
   )
 }
