@@ -21,10 +21,6 @@ export function getPrompts(): Promise<Prompt[]> {
   return fetch('/api/prompts').then((res) => handle(res))
 }
 
-export function getPrompt(id: number): Promise<Prompt> {
-  return fetch(`/api/prompts/${id}`).then((res) => handle(res))
-}
-
 type PromptInput = {
   title: string
   description: string

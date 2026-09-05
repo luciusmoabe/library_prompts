@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { updatePrompt } from '@/lib/api'
 import type { Category, Prompt } from '@/lib/types'
 import PromptFormFields, { type PromptFieldValues } from '@/components/PromptFormFields'
@@ -11,31 +12,32 @@ export default function PromptDetailView({
   categories,
   canShowEdit,
   canActuallyEdit,
-  onSaved,
 }: {
   prompt: Prompt
   categories: Category[]
   canShowEdit: boolean
   canActuallyEdit: boolean
-  onSaved: (prompt: Prompt) => void
 }) {
+  const router = useRouter()
+  const [current, setCurrent] = useState(prompt)
   const [editing, setEditing] = useState(false)
 
   return (
     <div className="prompt-detail-card">
       <div className="prompt-detail-header">
-        <h2>{prompt.title}</h2>
-        <span className="prompt-detail-category">{prompt.category}</span>
+        <h2>{current.title}</h2>
+        <span className="prompt-detail-category">{current.category}</span>
       </div>
       <div className="prompt-detail-body">
         {editing ? (
           <EditPromptFields
-            prompt={prompt}
+            prompt={current}
             categories={categories}
             onCancel={() => setEditing(false)}
             onSaved={(updated) => {
-              onSaved(updated)
+              setCurrent(updated)
               setEditing(false)
+              router.refresh()
             }}
           />
         ) : (
@@ -44,33 +46,33 @@ export default function PromptDetailView({
               <span className="prompt-detail-section-icon">◎</span>
               <div className="prompt-detail-section-body">
                 <p className="prompt-detail-section-label">Para que serve</p>
-                <p>{prompt.purpose}</p>
+                <p>{current.purpose}</p>
               </div>
             </div>
             <div className="prompt-detail-section">
               <span className="prompt-detail-section-icon">◷</span>
               <div className="prompt-detail-section-body">
                 <p className="prompt-detail-section-label">Quando utilizar</p>
-                <p>{prompt.whenToUse}</p>
+                <p>{current.whenToUse}</p>
               </div>
             </div>
 
             <div className="prompt-detail-content-head">
               <strong>Prompt completo</strong>
-              <button className="prompt-detail-copy-button" onClick={() => navigator.clipboard?.writeText(prompt.content)}>
+              <button className="prompt-detail-copy-button" onClick={() => navigator.clipboard?.writeText(current.content)}>
                 ▧ Copiar
               </button>
             </div>
             <div className="prompt-detail-content-box">
-              {prompt.content.split(/(\{\{.*?\}\})/g).map((part, index) =>
+              {current.content.split(/(\{\{.*?\}\})/g).map((part, index) =>
                 part.startsWith('{{') ? <mark key={index}>{part}</mark> : <span key={index}>{part}</span>,
               )}
             </div>
 
-            {prompt.attachments.length > 0 && (
+            {current.attachments.length > 0 && (
               <div className="attachments">
                 <strong>Anexos</strong>
-                {prompt.attachments.map((file) => (
+                {current.attachments.map((file) => (
                   <div className="attachment" key={file.name}>
                     ▧ {file.name}
                     <small>{file.size}</small>
