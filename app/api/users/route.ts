@@ -29,9 +29,13 @@ export async function POST(request: Request) {
   const name = (body.name as string | undefined)?.trim()
   const email = (body.email as string | undefined)?.trim()
   const role = body.role as Role | undefined
+  const password = body.password as string | undefined
 
   if (!name || !email || !role || !VALID_ROLES.includes(role)) {
     return NextResponse.json({ error: 'Campos obrigatórios ausentes ou inválidos' }, { status: 400 })
+  }
+  if (!password || password.length < 6) {
+    return NextResponse.json({ error: 'Senha deve ter ao menos 6 caracteres' }, { status: 400 })
   }
 
   const existing = await sql`SELECT id FROM users WHERE email = ${email}`
@@ -39,7 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'E-mail já cadastrado' }, { status: 409 })
   }
 
-  const passwordHash = await bcrypt.hash('123456', 10)
+  const passwordHash = await bcrypt.hash(password, 10)
   const [user] = await sql`
     INSERT INTO users (name, email, role, password_hash)
     VALUES (${name}, ${email}, ${role}, ${passwordHash})

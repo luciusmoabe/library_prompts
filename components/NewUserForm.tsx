@@ -9,15 +9,20 @@ export default function NewUserForm({ onSaved }: { onSaved: (user: User) => void
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('Leitor')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError('')
+    if (password.length < 6) {
+      setError('A senha deve ter ao menos 6 caracteres.')
+      return
+    }
     setSaving(true)
     try {
-      const user = await createUser({ name, email, role })
+      const user = await createUser({ name, email, role, password })
       onSaved(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar usuário')
@@ -43,6 +48,10 @@ export default function NewUserForm({ onSaved }: { onSaved: (user: User) => void
           <option>Editor</option>
           <option>Leitor</option>
         </select>
+      </label>
+      <label>
+        Senha inicial
+        <input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
       </label>
       <button className="use-button" disabled={saving}>
         {saving ? 'Salvando...' : 'Salvar usuário'}

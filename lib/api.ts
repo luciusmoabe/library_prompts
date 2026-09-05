@@ -51,7 +51,7 @@ export function getUsers(): Promise<User[]> {
   return fetch('/api/users').then((res) => handle(res))
 }
 
-export function createUser(input: { name: string; email: string; role: Role }): Promise<User> {
+export function createUser(input: { name: string; email: string; role: Role; password: string }): Promise<User> {
   return postJson('/api/users', input).then((res) => handle(res))
 }
 
