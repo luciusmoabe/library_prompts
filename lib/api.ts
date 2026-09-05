@@ -55,6 +55,10 @@ export function createUser(input: { name: string; email: string; role: Role; pas
   return postJson('/api/users', input).then((res) => handle(res))
 }
 
+export function updateUser(id: number, input: { name: string; email: string; role: Role }): Promise<User> {
+  return postJson(`/api/users/${id}`, input, 'PATCH').then((res) => handle(res))
+}
+
 export function deleteUser(id: number): Promise<void> {
   return fetch(`/api/users/${id}`, { method: 'DELETE' }).then((res) => handle(res))
 }

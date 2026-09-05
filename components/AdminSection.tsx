@@ -6,6 +6,7 @@ export default function AdminSection({
   users,
   onAdd,
   onDeleteCategory,
+  onEditUser,
   onDeleteUser,
 }: {
   section: 'categories' | 'users'
@@ -13,6 +14,7 @@ export default function AdminSection({
   users: User[]
   onAdd: () => void
   onDeleteCategory: (id: number) => void
+  onEditUser: (user: User) => void
   onDeleteUser: (id: number) => void
 }) {
   return (
@@ -40,6 +42,7 @@ export default function AdminSection({
                 <strong>{user.name}</strong>
                 <span>{user.email}</span>
                 <span className="role-badge">{user.role}</span>
+                <button onClick={() => onEditUser(user)}>Editar</button>
                 <button onClick={() => onDeleteUser(user.id)}>Excluir</button>
               </div>
             ))}

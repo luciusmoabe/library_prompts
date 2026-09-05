@@ -11,11 +11,12 @@ import Modal from '@/components/Modal'
 import NewPromptForm from '@/components/NewPromptForm'
 import NewCategoryForm from '@/components/NewCategoryForm'
 import NewUserForm from '@/components/NewUserForm'
+import EditUserForm from '@/components/EditUserForm'
 import ChangePasswordForm from '@/components/ChangePasswordForm'
 import { deleteCategory, deleteUser, getCategories, getPrompts, getUsers, toggleFavorite as apiToggleFavorite } from '@/lib/api'
 import type { Category, Prompt, User } from '@/lib/types'
 
-type ModalKind = 'prompt' | 'category' | 'user' | 'password' | null
+type ModalKind = 'prompt' | 'category' | 'user' | 'editUser' | 'password' | null
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -32,6 +33,7 @@ export default function Home() {
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [modal, setModal] = useState<ModalKind>(null)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
 
   const canEdit = session?.user.role !== 'Leitor'
   const isAdmin = session?.user.role === 'Administrador'
@@ -138,6 +140,10 @@ export default function Home() {
               users={users}
               onAdd={() => setModal(section === 'categories' ? 'category' : 'user')}
               onDeleteCategory={handleDeleteCategory}
+              onEditUser={(user) => {
+                setEditingUser(user)
+                setModal('editUser')
+              }}
               onDeleteUser={handleDeleteUser}
             />
           ) : (
@@ -187,6 +193,24 @@ export default function Home() {
             onSaved={(user) => {
               setUsers((current) => [...current, user])
               setModal(null)
+            }}
+          />
+        </Modal>
+      )}
+      {modal === 'editUser' && editingUser && (
+        <Modal
+          title="Editar usuário"
+          close={() => {
+            setModal(null)
+            setEditingUser(null)
+          }}
+        >
+          <EditUserForm
+            user={editingUser}
+            onSaved={(updated) => {
+              setUsers((current) => current.map((u) => (u.id === updated.id ? updated : u)))
+              setModal(null)
+              setEditingUser(null)
             }}
           />
         </Modal>
