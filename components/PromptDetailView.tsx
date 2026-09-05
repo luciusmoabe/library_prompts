@@ -3,24 +3,40 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { updatePrompt } from '@/lib/api'
+import { deletePrompt, updatePrompt } from '@/lib/api'
 import type { Category, Prompt } from '@/lib/types'
 import PromptFormFields, { type PromptFieldValues } from '@/components/PromptFormFields'
 
 export default function PromptDetailView({
   prompt,
   categories,
-  canShowEdit,
+  canManage,
   canActuallyEdit,
 }: {
   prompt: Prompt
   categories: Category[]
-  canShowEdit: boolean
+  canManage: boolean
   canActuallyEdit: boolean
 }) {
   const router = useRouter()
   const [current, setCurrent] = useState(prompt)
   const [editing, setEditing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  async function handleDelete() {
+    if (!window.confirm(`Excluir o prompt "${current.title}"? Essa ação não pode ser desfeita.`)) return
+    setDeleteError('')
+    setDeleting(true)
+    try {
+      await deletePrompt(current.id)
+      router.push('/')
+      router.refresh()
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Erro ao excluir o prompt')
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="prompt-detail-card">
@@ -81,13 +97,17 @@ export default function PromptDetailView({
               </div>
             )}
 
-            {canShowEdit && (
+            {canManage && (
               <div className="prompt-detail-footer">
                 <button className="edit-button" onClick={canActuallyEdit ? () => setEditing(true) : undefined}>
                   Editar prompt
                 </button>
+                <button className="delete-button" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? 'Excluindo...' : 'Excluir prompt'}
+                </button>
               </div>
             )}
+            {deleteError && <p className="login-error">{deleteError}</p>}
           </>
         )}
       </div>

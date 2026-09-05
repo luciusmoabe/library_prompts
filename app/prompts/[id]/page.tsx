@@ -20,7 +20,7 @@ export default async function PromptPage({ params }: { params: Promise<{ id: str
     : Promise.resolve([])
   const [prompt, categories] = await Promise.all([getPromptById(Number(id)), categoriesPromise])
 
-  const canShowEdit = isAdmin || (session.user.role === 'Editor' && prompt?.ownerId === Number(session.user.id))
+  const canManage = isAdmin || (session.user.role === 'Editor' && prompt?.ownerId === Number(session.user.id))
 
   return (
     <div className="app-shell">
@@ -41,7 +41,7 @@ export default async function PromptPage({ params }: { params: Promise<{ id: str
             ← Voltar para a biblioteca
           </Link>
           {prompt ? (
-            <PromptDetailView key={prompt.id} prompt={prompt} categories={categories} canShowEdit={canShowEdit} canActuallyEdit={isAdmin} />
+            <PromptDetailView key={prompt.id} prompt={prompt} categories={categories} canManage={canManage} canActuallyEdit={isAdmin} />
           ) : (
             <div className="hint">Prompt não encontrado.</div>
           )}

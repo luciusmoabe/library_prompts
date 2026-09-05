@@ -76,3 +76,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return NextResponse.json(result)
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (session.user.role === 'Leitor') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { id } = await params
+  const prompt = await getPromptById(Number(id))
+  if (!prompt) return NextResponse.json({ error: 'Prompt não encontrado' }, { status: 404 })
+
+  const isOwner = prompt.ownerId === Number(session.user.id)
+  if (session.user.role !== 'Administrador' && !isOwner) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  await sql`DELETE FROM prompts WHERE id = ${Number(id)}`
+  return new NextResponse(null, { status: 204 })
+}

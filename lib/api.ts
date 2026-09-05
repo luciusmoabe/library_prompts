@@ -38,6 +38,10 @@ export function updatePrompt(id: number, input: PromptInput): Promise<Prompt> {
   return postJson(`/api/prompts/${id}`, input, 'PATCH').then((res) => handle(res))
 }
 
+export function deletePrompt(id: number): Promise<void> {
+  return fetch(`/api/prompts/${id}`, { method: 'DELETE' }).then((res) => handle(res))
+}
+
 export function toggleFavorite(id: number, favorite: boolean): Promise<Prompt> {
   return postJson(`/api/prompts/${id}/favorite`, { favorite }, 'PATCH').then((res) => handle(res))
 }
