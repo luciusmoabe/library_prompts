@@ -7,6 +7,7 @@ Biblioteca de prompts do time — Next.js (App Router, TypeScript) + Postgres (N
 - Next.js 16 (App Router) + React 19 + TypeScript
 - Postgres no [Neon](https://neon.tech), acessado via `@neondatabase/serverless`
 - Autenticação com `next-auth` (credenciais + bcrypt), papéis `Administrador` / `Editor` / `Leitor`
+- Upload de anexos via [Vercel Blob](https://vercel.com/docs/vercel-blob)
 - Lint com [oxlint](https://oxc.rs)
 
 ## Configuração local
@@ -14,11 +15,12 @@ Biblioteca de prompts do time — Next.js (App Router, TypeScript) + Postgres (N
 1. Copie `.env.example` para `.env.local` e preencha:
    - `DATABASE_URL`: connection string do Neon
    - `NEXTAUTH_SECRET`: um valor aleatório (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`)
+   - `BLOB_READ_WRITE_TOKEN`: token do Blob Store da Vercel (`vercel blob create-store <nome> --access public --yes` cria e já popula essa variável)
 2. Instale as dependências:
    ```bash
    npm install
    ```
-3. Rode o schema + seed (usuários, categorias e prompts de demonstração) contra o banco:
+3. Rode o schema + seed (usuários, tags e prompts de demonstração) contra o banco:
    ```bash
    npm run seed
    ```

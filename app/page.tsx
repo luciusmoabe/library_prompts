@@ -9,27 +9,30 @@ import PromptLibrary from '@/components/PromptLibrary'
 import AdminSection from '@/components/AdminSection'
 import Modal from '@/components/Modal'
 import NewPromptForm from '@/components/NewPromptForm'
-import NewCategoryForm from '@/components/NewCategoryForm'
+import NewTagForm from '@/components/NewTagForm'
 import NewUserForm from '@/components/NewUserForm'
 import EditUserForm from '@/components/EditUserForm'
 import ChangePasswordForm from '@/components/ChangePasswordForm'
-import { deleteCategory, deleteUser, getCategories, getPrompts, getUsers, toggleFavorite as apiToggleFavorite } from '@/lib/api'
-import type { Category, Prompt, User } from '@/lib/types'
+import PromptCardSkeleton from '@/components/PromptCardSkeleton'
+import { useToast } from '@/components/Toaster'
+import { deleteTag, deleteUser, getPrompts, getTags, getUsers, toggleFavorite as apiToggleFavorite } from '@/lib/api'
+import type { Prompt, Tag, User } from '@/lib/types'
 
-type ModalKind = 'prompt' | 'category' | 'user' | 'editUser' | 'password' | null
+type ModalKind = 'prompt' | 'tag' | 'user' | 'editUser' | 'password' | null
 
 export default function Home() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const showToast = useToast()
 
   const [prompts, setPrompts] = useState<Prompt[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const [section, setSection] = useState<'library' | 'categories' | 'users'>('library')
-  const [category, setCategory] = useState('Todos os prompts')
+  const [section, setSection] = useState<'library' | 'tags' | 'users'>('library')
+  const [tagFilter, setTagFilter] = useState('Todos os prompts')
   const [query, setQuery] = useState('')
   const [modal, setModal] = useState<ModalKind>(null)
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -45,9 +48,9 @@ export default function Home() {
     setLoading(true)
     setError('')
     try {
-      const [promptsRes, categoriesRes] = await Promise.all([getPrompts(), getCategories()])
+      const [promptsRes, tagsRes] = await Promise.all([getPrompts(), getTags()])
       setPrompts(promptsRes)
-      setCategories(categoriesRes)
+      setTags(tagsRes)
       if (role === 'Administrador') {
         setUsers(await getUsers())
       }
@@ -66,11 +69,13 @@ export default function Home() {
   const filtered = useMemo(
     () =>
       prompts.filter((prompt) => {
-        const byCategory = category === 'Todos os prompts' || (category === 'Favoritos' ? prompt.favorite : prompt.category === category)
-        const text = `${prompt.title} ${prompt.description}`.toLowerCase()
-        return byCategory && text.includes(query.toLowerCase())
+        const byTag =
+          tagFilter === 'Todos os prompts' ||
+          (tagFilter === 'Favoritos' ? prompt.favorite : prompt.tags.some((t) => t.name === tagFilter))
+        const text = `${prompt.title} ${prompt.description} ${prompt.content}`.toLowerCase()
+        return byTag && text.includes(query.toLowerCase())
       }),
-    [prompts, category, query],
+    [prompts, tagFilter, query],
   )
 
   async function handleToggleFavorite(prompt: Prompt) {
@@ -78,18 +83,20 @@ export default function Home() {
     setPrompts((current) => current.map((p) => (p.id === prompt.id ? { ...p, favorite: nextFavorite } : p)))
     try {
       await apiToggleFavorite(prompt.id, nextFavorite)
+      showToast(nextFavorite ? 'Adicionado aos favoritos.' : 'Removido dos favoritos.')
     } catch (err) {
       setPrompts((current) => current.map((p) => (p.id === prompt.id ? { ...p, favorite: prompt.favorite } : p)))
       setError(err instanceof Error ? err.message : 'Não foi possível favoritar o prompt')
     }
   }
 
-  async function handleDeleteCategory(id: number) {
+  async function handleDeleteTag(id: number) {
     try {
-      await deleteCategory(id)
-      setCategories((current) => current.filter((c) => c.id !== id))
+      await deleteTag(id)
+      setTags((current) => current.filter((t) => t.id !== id))
+      showToast('Tag excluída.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível excluir a categoria')
+      setError(err instanceof Error ? err.message : 'Não foi possível excluir a tag')
     }
   }
 
@@ -97,6 +104,7 @@ export default function Home() {
     try {
       await deleteUser(id)
       setUsers((current) => current.filter((u) => u.id !== id))
+      showToast('Usuário excluído.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível excluir o usuário')
     }
@@ -110,16 +118,16 @@ export default function Home() {
     <div className="app-shell">
       <Sidebar
         section={section}
-        category={category}
+        tagFilter={tagFilter}
         onSelectLibrary={(item) => {
           setSection('library')
-          setCategory(item)
+          setTagFilter(item)
         }}
         onSelectSection={setSection}
         onOpenNewPrompt={() => setModal('prompt')}
         onOpenPassword={() => setModal('password')}
         prompts={prompts}
-        categories={categories}
+        tags={tags}
         canEdit={canEdit}
         isAdmin={isAdmin}
         userName={session.user.name}
@@ -130,14 +138,26 @@ export default function Home() {
         <main id="section-content">
           {error && <div className="hint error-hint">{error}</div>}
           {loading ? (
-            <div className="hint">Carregando...</div>
-          ) : section === 'categories' || section === 'users' ? (
+            section === 'library' ? (
+              <section className="content-wrap">
+                <div className="library-layout">
+                  <div className="cards">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <PromptCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            ) : (
+              <div className="hint">Carregando...</div>
+            )
+          ) : section === 'tags' || section === 'users' ? (
             <AdminSection
               section={section}
-              categories={categories}
+              tags={tags}
               users={users}
-              onAdd={() => setModal(section === 'categories' ? 'category' : 'user')}
-              onDeleteCategory={handleDeleteCategory}
+              onAdd={() => setModal(section === 'tags' ? 'tag' : 'user')}
+              onDeleteTag={handleDeleteTag}
               onEditUser={(user) => {
                 setEditingUser(user)
                 setModal('editUser')
@@ -151,6 +171,7 @@ export default function Home() {
               onQueryChange={setQuery}
               onOpenNewPrompt={() => setModal('prompt')}
               filtered={filtered}
+              totalPrompts={prompts.length}
               onToggleFavorite={handleToggleFavorite}
             />
           )}
@@ -160,7 +181,7 @@ export default function Home() {
       {modal === 'prompt' && (
         <Modal title="Novo prompt" close={() => setModal(null)}>
           <NewPromptForm
-            categories={categories}
+            tags={tags}
             onSaved={(prompt) => {
               setPrompts((current) => [prompt, ...current])
               setModal(null)
@@ -168,11 +189,11 @@ export default function Home() {
           />
         </Modal>
       )}
-      {modal === 'category' && (
-        <Modal title="Nova categoria" close={() => setModal(null)}>
-          <NewCategoryForm
-            onSaved={(newCategory) => {
-              setCategories((current) => [...current, newCategory])
+      {modal === 'tag' && (
+        <Modal title="Nova tag" close={() => setModal(null)}>
+          <NewTagForm
+            onSaved={(newTag) => {
+              setTags((current) => [...current, newTag])
               setModal(null)
             }}
           />

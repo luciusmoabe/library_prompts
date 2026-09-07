@@ -7,8 +7,8 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const categories = await sql`SELECT id, name FROM categories ORDER BY name`
-  return NextResponse.json(categories)
+  const tags = await sql`SELECT id, name FROM tags ORDER BY name`
+  return NextResponse.json(tags)
 }
 
 export async function POST(request: Request) {
@@ -22,14 +22,14 @@ export async function POST(request: Request) {
   const name = (body.name as string | undefined)?.trim()
   if (!name) return NextResponse.json({ error: 'Nome obrigatório' }, { status: 400 })
 
-  const existing = await sql`SELECT id FROM categories WHERE name = ${name}`
+  const existing = await sql`SELECT id FROM tags WHERE name = ${name}`
   if (existing.length) {
-    return NextResponse.json({ error: 'Categoria já existe' }, { status: 409 })
+    return NextResponse.json({ error: 'Tag já existe' }, { status: 409 })
   }
 
-  const [category] = await sql`
-    INSERT INTO categories (name) VALUES (${name})
+  const [tag] = await sql`
+    INSERT INTO tags (name) VALUES (${name})
     RETURNING id, name
   `
-  return NextResponse.json(category, { status: 201 })
+  return NextResponse.json(tag, { status: 201 })
 }

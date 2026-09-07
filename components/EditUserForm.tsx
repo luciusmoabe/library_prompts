@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { updateUser } from '@/lib/api'
+import { useToast } from '@/components/Toaster'
 import type { Role, User } from '@/lib/types'
 
 export default function EditUserForm({ user, onSaved }: { user: User; onSaved: (user: User) => void }) {
+  const showToast = useToast()
   const [name, setName] = useState(user.name)
   const [email, setEmail] = useState(user.email)
   const [role, setRole] = useState<Role>(user.role)
@@ -18,6 +20,7 @@ export default function EditUserForm({ user, onSaved }: { user: User; onSaved: (
     setSaving(true)
     try {
       const updated = await updateUser(user.id, { name, email, role })
+      showToast('Usuário atualizado.')
       onSaved(updated)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar usuário')

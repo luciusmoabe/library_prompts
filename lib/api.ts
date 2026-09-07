@@ -1,4 +1,4 @@
-import type { Attachment, Category, Prompt, Role, User } from '@/lib/types'
+import type { Attachment, Prompt, PromptVersion, Role, Tag, User, Visibility } from '@/lib/types'
 
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -24,13 +24,13 @@ export function getPrompts(): Promise<Prompt[]> {
 type PromptInput = {
   title: string
   description: string
-  category: string
+  tagIds: number[]
   content: string
   purpose: string
   whenToUse: string
 }
 
-export function createPrompt(input: PromptInput & { attachments: Attachment[] }): Promise<Prompt> {
+export function createPrompt(input: PromptInput & { attachments: Attachment[]; visibility: Visibility }): Promise<Prompt> {
   return postJson('/api/prompts', input).then((res) => handle(res))
 }
 
@@ -46,16 +46,24 @@ export function toggleFavorite(id: number, favorite: boolean): Promise<Prompt> {
   return postJson(`/api/prompts/${id}/favorite`, { favorite }, 'PATCH').then((res) => handle(res))
 }
 
-export function getCategories(): Promise<Category[]> {
-  return fetch('/api/categories').then((res) => handle(res))
+export function updatePromptVisibility(id: number, visibility: Visibility): Promise<{ id: number; visibility: Visibility }> {
+  return postJson(`/api/prompts/${id}/visibility`, { visibility }, 'PATCH').then((res) => handle(res))
 }
 
-export function createCategory(name: string): Promise<Category> {
-  return postJson('/api/categories', { name }).then((res) => handle(res))
+export function getPromptVersions(id: number): Promise<PromptVersion[]> {
+  return fetch(`/api/prompts/${id}/versions`).then((res) => handle(res))
 }
 
-export function deleteCategory(id: number): Promise<void> {
-  return fetch(`/api/categories/${id}`, { method: 'DELETE' }).then((res) => handle(res))
+export function getTags(): Promise<Tag[]> {
+  return fetch('/api/tags').then((res) => handle(res))
+}
+
+export function createTag(name: string): Promise<Tag> {
+  return postJson('/api/tags', { name }).then((res) => handle(res))
+}
+
+export function deleteTag(id: number): Promise<void> {
+  return fetch(`/api/tags/${id}`, { method: 'DELETE' }).then((res) => handle(res))
 }
 
 export function getUsers(): Promise<User[]> {

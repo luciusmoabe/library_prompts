@@ -20,12 +20,15 @@ export default function PromptCard({
   return (
     <Link href={`/prompts/${prompt.id}`} className="prompt-card">
       <div className="card-top">
-        <span>{prompt.category}</span>
+        <span>{prompt.tags.map((t) => t.name).join(', ') || 'Sem tag'}</span>
         <button className="favorite" onClick={handleFavoriteClick}>
           {prompt.favorite ? '★' : '☆'}
         </button>
       </div>
-      <h2>{prompt.title}</h2>
+      <h2>
+        {prompt.visibility === 'private' && '🔒 '}
+        {prompt.title}
+      </h2>
       <p>{prompt.description}</p>
       <small>Por {prompt.owner}</small>
     </Link>

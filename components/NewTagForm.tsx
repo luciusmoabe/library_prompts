@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { createCategory } from '@/lib/api'
-import type { Category } from '@/lib/types'
+import { createTag } from '@/lib/api'
+import { useToast } from '@/components/Toaster'
+import type { Tag } from '@/lib/types'
 
-export default function NewCategoryForm({ onSaved }: { onSaved: (category: Category) => void }) {
+export default function NewTagForm({ onSaved }: { onSaved: (tag: Tag) => void }) {
+  const showToast = useToast()
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -15,10 +17,11 @@ export default function NewCategoryForm({ onSaved }: { onSaved: (category: Categ
     setError('')
     setSaving(true)
     try {
-      const category = await createCategory(name.trim())
-      onSaved(category)
+      const tag = await createTag(name.trim())
+      showToast('Tag criada.')
+      onSaved(tag)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar categoria')
+      setError(err instanceof Error ? err.message : 'Erro ao criar tag')
     } finally {
       setSaving(false)
     }

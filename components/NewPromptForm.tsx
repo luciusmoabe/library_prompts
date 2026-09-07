@@ -2,35 +2,53 @@
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { upload } from '@vercel/blob/client'
 import { createPrompt } from '@/lib/api'
-import type { Attachment, Category, Prompt } from '@/lib/types'
+import { useToast } from '@/components/Toaster'
+import type { Attachment, Prompt, Tag, Visibility } from '@/lib/types'
 import PromptFormFields, { type PromptFieldValues } from '@/components/PromptFormFields'
 
 export default function NewPromptForm({
-  categories,
+  tags,
+  initialValues,
   onSaved,
 }: {
-  categories: Category[]
+  tags: Tag[]
+  initialValues?: Partial<PromptFieldValues> & { attachments?: Attachment[] }
   onSaved: (prompt: Prompt) => void
 }) {
+  const showToast = useToast()
   const [values, setValues] = useState<PromptFieldValues>({
-    title: '',
-    description: '',
-    category: categories[0]?.name ?? 'Geral',
-    purpose: '',
-    whenToUse: '',
-    content: '',
+    title: initialValues?.title ?? '',
+    description: initialValues?.description ?? '',
+    tagIds: initialValues?.tagIds ?? [],
+    purpose: initialValues?.purpose ?? '',
+    whenToUse: initialValues?.whenToUse ?? '',
+    content: initialValues?.content ?? '',
   })
-  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [visibility, setVisibility] = useState<Visibility>('shared')
+  const [attachments, setAttachments] = useState<Attachment[]>(initialValues?.attachments ?? [])
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  function attachFiles(files: FileList | null) {
-    if (!files) return
-    setAttachments((current) => [
-      ...current,
-      ...Array.from(files).map((file) => ({ name: file.name, size: `${Math.max(1, Math.round(file.size / 1024))} KB` })),
-    ])
+  async function attachFiles(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setUploading(true)
+    setError('')
+    try {
+      for (const file of Array.from(files)) {
+        const blob = await upload(file.name, file, { access: 'public', handleUploadUrl: '/api/uploads' })
+        setAttachments((current) => [
+          ...current,
+          { name: file.name, size: `${Math.max(1, Math.round(file.size / 1024))} KB`, url: blob.url },
+        ])
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar o arquivo')
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -38,7 +56,8 @@ export default function NewPromptForm({
     setError('')
     setSaving(true)
     try {
-      const prompt = await createPrompt({ ...values, attachments })
+      const prompt = await createPrompt({ ...values, attachments, visibility })
+      showToast('Prompt criado.')
       onSaved(prompt)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar o prompt')
@@ -49,18 +68,28 @@ export default function NewPromptForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <PromptFormFields values={values} onChange={setValues} categories={categories} />
+      <PromptFormFields values={values} onChange={setValues} tags={tags} />
       <label className="file-drop">
         ＋ Anexar arquivos
-        <input type="file" multiple onChange={(event) => attachFiles(event.target.files)} />
+        <input type="file" multiple disabled={uploading} onChange={(event) => attachFiles(event.target.files)} />
       </label>
+      {uploading && <p className="hint" style={{ padding: '4px 0' }}>Enviando arquivo...</p>}
       {attachments.map((file) => (
         <div className="selected-file" key={file.name}>
           {file.name}
           <span>{file.size}</span>
         </div>
       ))}
-      <button className="use-button" disabled={saving}>
+      <label>
+        <input
+          type="checkbox"
+          checked={visibility === 'private'}
+          onChange={(event) => setVisibility(event.target.checked ? 'private' : 'shared')}
+          style={{ display: 'inline-block', width: 'auto', marginRight: 8 }}
+        />
+        Tornar este prompt privado
+      </label>
+      <button className="use-button" disabled={saving || uploading}>
         {saving ? 'Salvando...' : 'Salvar prompt'}
       </button>
       {error && <p className="login-error">{error}</p>}

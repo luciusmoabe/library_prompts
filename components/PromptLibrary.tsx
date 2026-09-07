@@ -9,6 +9,7 @@ export default function PromptLibrary({
   onQueryChange,
   onOpenNewPrompt,
   filtered,
+  totalPrompts,
   onToggleFavorite,
 }: {
   canEdit: boolean
@@ -16,6 +17,7 @@ export default function PromptLibrary({
   onQueryChange: (value: string) => void
   onOpenNewPrompt: () => void
   filtered: Prompt[]
+  totalPrompts: number
   onToggleFavorite: (prompt: Prompt) => void
 }) {
   return (
@@ -40,11 +42,27 @@ export default function PromptLibrary({
           {filtered.map((prompt) => (
             <PromptCard key={prompt.id} prompt={prompt} onToggleFavorite={() => onToggleFavorite(prompt)} />
           ))}
-          {filtered.length === 0 && (
+          {filtered.length === 0 && totalPrompts === 0 && (
+            <div className="empty-state">
+              <span>—</span>
+              <strong>Sua biblioteca está vazia</strong>
+              <p>
+                {canEdit
+                  ? 'Crie o primeiro prompt do time para começar.'
+                  : 'Ainda não há prompts compartilhados com você.'}
+              </p>
+              {canEdit && (
+                <button className="primary-button" onClick={onOpenNewPrompt} style={{ marginTop: 16 }}>
+                  ＋ Criar o primeiro prompt
+                </button>
+              )}
+            </div>
+          )}
+          {filtered.length === 0 && totalPrompts > 0 && (
             <div className="empty-state">
               <span>—</span>
               <strong>Nenhum prompt encontrado</strong>
-              <p>Ajuste a busca ou o filtro de categoria.</p>
+              <p>Ajuste a busca ou o filtro de tag.</p>
             </div>
           )}
         </div>

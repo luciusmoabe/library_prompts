@@ -1,9 +1,9 @@
-import type { Category } from '@/lib/types'
+import type { Tag } from '@/lib/types'
 
 export type PromptFieldValues = {
   title: string
   description: string
-  category: string
+  tagIds: number[]
   purpose: string
   whenToUse: string
   content: string
@@ -12,14 +12,18 @@ export type PromptFieldValues = {
 export default function PromptFormFields({
   values,
   onChange,
-  categories,
+  tags,
 }: {
   values: PromptFieldValues
   onChange: (values: PromptFieldValues) => void
-  categories: Category[]
+  tags: Tag[]
 }) {
   function set<K extends keyof PromptFieldValues>(key: K, value: PromptFieldValues[K]) {
     onChange({ ...values, [key]: value })
+  }
+
+  function toggleTag(id: number) {
+    set('tagIds', values.tagIds.includes(id) ? values.tagIds.filter((t) => t !== id) : [...values.tagIds, id])
   }
 
   return (
@@ -33,12 +37,19 @@ export default function PromptFormFields({
         <input required value={values.description} onChange={(event) => set('description', event.target.value)} />
       </label>
       <label>
-        Categoria
-        <select value={values.category} onChange={(event) => set('category', event.target.value)}>
-          {categories.map((item) => (
-            <option key={item.id}>{item.name}</option>
+        Tags
+        <div className="tag-picker">
+          {tags.map((tag) => (
+            <button
+              type="button"
+              key={tag.id}
+              className={values.tagIds.includes(tag.id) ? 'tag-chip selected' : 'tag-chip'}
+              onClick={() => toggleTag(tag.id)}
+            >
+              {tag.name}
+            </button>
           ))}
-        </select>
+        </div>
       </label>
       <label>
         Para que serve

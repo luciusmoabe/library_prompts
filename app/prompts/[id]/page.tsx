@@ -6,7 +6,7 @@ import { sql } from '@/lib/db'
 import { getPromptById } from '@/lib/prompts'
 import PromptDetailView from '@/components/PromptDetailView'
 import SignOutButton from '@/components/SignOutButton'
-import type { Category } from '@/lib/types'
+import type { Tag } from '@/lib/types'
 
 export default async function PromptPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -14,13 +14,18 @@ export default async function PromptPage({ params }: { params: Promise<{ id: str
 
   const { id } = await params
   const isAdmin = session.user.role === 'Administrador'
+  const userId = Number(session.user.id)
+  const viewer = { userId, isAdmin }
 
-  const categoriesPromise: Promise<Category[]> = isAdmin
-    ? (sql`SELECT id, name FROM categories ORDER BY name` as unknown as Promise<Category[]>)
-    : Promise.resolve([])
-  const [prompt, categories] = await Promise.all([getPromptById(Number(id)), categoriesPromise])
+  const [prompt, tags] = await Promise.all([
+    getPromptById(Number(id), viewer),
+    sql`SELECT id, name FROM tags ORDER BY name` as unknown as Promise<Tag[]>,
+  ])
 
-  const canManage = isAdmin || (session.user.role === 'Editor' && prompt?.ownerId === Number(session.user.id))
+  const isOwner = prompt?.ownerId === userId
+  const canManage = isAdmin || (session.user.role === 'Editor' && isOwner)
+  const canToggleVisibility = isAdmin || isOwner
+  const canDuplicate = session.user.role !== 'Leitor'
 
   return (
     <div className="app-shell">
@@ -41,7 +46,16 @@ export default async function PromptPage({ params }: { params: Promise<{ id: str
             ← Voltar para a biblioteca
           </Link>
           {prompt ? (
-            <PromptDetailView key={prompt.id} prompt={prompt} categories={categories} canManage={canManage} canActuallyEdit={isAdmin} />
+            <PromptDetailView
+              key={prompt.id}
+              prompt={prompt}
+              tags={tags}
+              canManage={canManage}
+              canActuallyEdit={isAdmin}
+              canToggleVisibility={canToggleVisibility}
+              canDuplicate={canDuplicate}
+              isAdmin={isAdmin}
+            />
           ) : (
             <div className="hint">Prompt não encontrado.</div>
           )}

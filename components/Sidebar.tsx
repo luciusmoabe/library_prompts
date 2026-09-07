@@ -1,43 +1,43 @@
 'use client'
 
 import { signOut } from 'next-auth/react'
-import type { Category, Prompt, Role } from '@/lib/types'
+import type { Prompt, Role, Tag } from '@/lib/types'
 
-type Section = 'library' | 'categories' | 'users'
+type Section = 'library' | 'tags' | 'users'
 
 export default function Sidebar({
   section,
-  category,
+  tagFilter,
   onSelectLibrary,
   onSelectSection,
   onOpenNewPrompt,
   onOpenPassword,
   prompts,
-  categories,
+  tags,
   canEdit,
   isAdmin,
   userName,
   userRole,
 }: {
   section: Section
-  category: string
-  onSelectLibrary: (category: string) => void
-  onSelectSection: (section: 'categories' | 'users') => void
+  tagFilter: string
+  onSelectLibrary: (tagFilter: string) => void
+  onSelectSection: (section: 'tags' | 'users') => void
   onOpenNewPrompt: () => void
   onOpenPassword: () => void
   prompts: Prompt[]
-  categories: Category[]
+  tags: Tag[]
   canEdit: boolean
   isAdmin: boolean
   userName: string
   userRole: Role
 }) {
-  const navItems = ['Todos os prompts', 'Favoritos', ...categories.map((c) => c.name)]
+  const navItems = ['Todos os prompts', 'Favoritos', ...tags.map((t) => t.name)]
 
   function countFor(item: string) {
     if (item === 'Todos os prompts') return prompts.length
     if (item === 'Favoritos') return prompts.filter((p) => p.favorite).length
-    return prompts.filter((p) => p.category === item).length
+    return prompts.filter((p) => p.tags.some((t) => t.name === item)).length
   }
 
   return (
@@ -55,7 +55,7 @@ export default function Sidebar({
       {navItems.map((item) => (
         <button
           key={item}
-          className={section === 'library' && category === item ? 'nav-item active' : 'nav-item'}
+          className={section === 'library' && tagFilter === item ? 'nav-item active' : 'nav-item'}
           onClick={() => onSelectLibrary(item)}
         >
           {item}
@@ -65,8 +65,8 @@ export default function Sidebar({
       {isAdmin && (
         <>
           <p className="nav-label section-label">Administração</p>
-          <button className={section === 'categories' ? 'nav-item active' : 'nav-item'} onClick={() => onSelectSection('categories')}>
-            Categorias
+          <button className={section === 'tags' ? 'nav-item active' : 'nav-item'} onClick={() => onSelectSection('tags')}>
+            Tags
           </button>
           <button className={section === 'users' ? 'nav-item active' : 'nav-item'} onClick={() => onSelectSection('users')}>
             Usuários

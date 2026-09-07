@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { createUser } from '@/lib/api'
+import { useToast } from '@/components/Toaster'
 import type { Role, User } from '@/lib/types'
 
 export default function NewUserForm({ onSaved }: { onSaved: (user: User) => void }) {
+  const showToast = useToast()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('Leitor')
@@ -23,6 +25,7 @@ export default function NewUserForm({ onSaved }: { onSaved: (user: User) => void
     setSaving(true)
     try {
       const user = await createUser({ name, email, role, password })
+      showToast('Usuário criado.')
       onSaved(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar usuário')

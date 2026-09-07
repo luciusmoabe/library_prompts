@@ -11,6 +11,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   const { id } = await params
-  await sql`DELETE FROM categories WHERE id = ${Number(id)}`
+  await sql`DELETE FROM tags WHERE id = ${Number(id)}`
   return new NextResponse(null, { status: 204 })
 }

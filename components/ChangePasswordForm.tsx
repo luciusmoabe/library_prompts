@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { changePassword } from '@/lib/api'
+import { useToast } from '@/components/Toaster'
 
 export default function ChangePasswordForm({ onSaved }: { onSaved: () => void }) {
+  const showToast = useToast()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -21,6 +23,7 @@ export default function ChangePasswordForm({ onSaved }: { onSaved: () => void })
     setSaving(true)
     try {
       await changePassword({ current, next, confirm })
+      showToast('Senha alterada.')
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao trocar a senha')
